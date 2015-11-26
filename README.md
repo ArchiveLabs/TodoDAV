@@ -18,13 +18,17 @@ This work is based on the essay [Universal Todo Lists](https://michaelkarpeles.c
 
 For the time being, an identity is an arbitrary entity having a `iid` (identity ID). Identities have cryptographic signatures and can span multiple `agents`
 
+- [?] Signature (crypto)
+
 ### Post
 
 See [IPFS Post](https://github.com/ipfs/post)
 
 - [!] Title
 - [!]`id`, a `uuid` hash (unique across `Post`s)
-- Date Created
+- [!] Sender(s) `iid`
+- [!] Recipient(s) `iid`
+- Date Created (UTC, epoch)
 - Last Modification (default null, merkel-link)
 
 ### Task
