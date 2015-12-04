@@ -3,3 +3,9 @@
 
 var sln = require("./sln-client");
 
+var repo = sln.createRepo("/", null);
+
+repo.query("", {}, function(err, URIs) {
+	console.log(err, URIs);
+});
+
