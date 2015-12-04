@@ -1,14 +1,25 @@
-.PHONY: all
-all: ./build/index.html ./build/index.js
+# Copyright 2015 ArchiveLabs, et al.
+# MIT Licensed?
 
-./build/index.html: ./src/index.html
+.SUFFIXES:
+.SECONDARY:
+
+ROOT := .
+BUILD_DIR := $(ROOT)/build
+SRC_DIR := $(ROOT)/src
+
+.PHONY: all
+all: $(BUILD_DIR)/index.html $(BUILD_DIR)/index.js
+
+$(BUILD_DIR)/%.html: $(SRC_DIR)/%.html
 	@- mkdir -p $(dir $@)
 	cp $< $@
 
-./build/index.js: ./src/main.js
+$(BUILD_DIR)/index.js: $(SRC_DIR)/main.js
 	@- mkdir -p $(dir $@)
 	browserify $< -o $@
 
 .PHONY: clean
 clean:
-	@- rm -rf ./build
+	@- rm -rf $(BUILD_DIR)
+
