@@ -10,7 +10,7 @@ repo.query("", {}, function(err, URIs) {
 });
 
 function formatItem(parentURI, content) {
-	return parentURI+"\r\n\r\n"+content;
+	return (parentURI||"")+"\r\n\r\n"+content;
 }
 function parseItem(item) {
 	var x = /^(|hash:\/\/[\w\d.-]+\/[\w\d.%_-]+)(?:\r\n|\r|\n)(?:\r\n|\r|\n)(.*)$/.exec(item);
