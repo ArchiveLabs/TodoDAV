@@ -23,7 +23,7 @@ cd /path/to/repo/
 ln -s /path/to/TodoDav/tododav-js/build tododav
 ```
 
-Then browse to <`http://localhost:8000/tododav`>.
+Then browse to `http://localhost:8000/tododav`.
 
 ## File type
 
