@@ -9,10 +9,10 @@ function formatItem(parentURI, content) {
 	return (parentURI||"")+"\r\n\r\n"+content;
 }
 function parseItem(item) {
-	var x = /^(|hash:\/\/[\w\d.-]+\/[\w\d.%_-]+)(?:\r\n|\r|\n)(?:\r\n|\r|\n)(.*)$/.exec(item);
+	var x = /^(hash:\/\/[\w\d.-]+\/[\w\d.%_-]+)?(?:\r\n|\r|\n)(?:\r\n|\r|\n)(.*)$/.exec(item);
 	if(!x) return null;
 	return {
-		parentURI: x[1],
+		parentURI: x[1] || null,
 		content: x[2],
 	};
 }
