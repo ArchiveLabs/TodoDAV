@@ -5,10 +5,6 @@ var sln = require("./sln-client");
 
 var repo = sln.createRepo("/", null);
 
-repo.query("", {}, function(err, URIs) {
-	console.log(err, URIs);
-});
-
 function formatItem(parentURI, content) {
 	return (parentURI||"")+"\r\n\r\n"+content;
 }
@@ -20,4 +16,19 @@ function parseItem(item) {
 		content: x[2],
 	};
 }
+
+// TODO: Query by file type for our todo item files?
+var stream = repo.createQueryStream("", { count: 10, wait: false, dir: "z" })
+stream.on("data", function(URI) {
+	stream.pause();
+
+	repo.getFile(URI, { encoding: "utf8" }, function(err, info) {
+		if(err) throw err;
+		var item = parseItem(info.data);
+		console.log(item);
+
+		stream.resume();
+	});
+
+});
 
