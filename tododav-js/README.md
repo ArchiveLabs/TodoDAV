@@ -20,7 +20,7 @@ For now, TodoDAV.js must be hosted by the StrongLink server to which it will con
 
 ```bash
 cd /path/to/repo/
-ln -s /path/to/TodoDav/tododav-js/build tododav
+ln -s /path/to/TodoDav/tododav-js/build ./blog/static/tododav
 ```
 
 Then browse to `http://localhost:8000/tododav`.
