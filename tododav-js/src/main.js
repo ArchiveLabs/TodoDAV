@@ -42,7 +42,10 @@ function Item(parentURI, content) {
 	item.internal.content.appendChild(document.createTextNode(item.content));
 	item.internal.checkbox.onclick = function() {
 		item.setState(this.checked, function(err) {
-			if(err) throw err;
+			if(err) {
+				console.log(err);
+				item.internal.checkbox.checked = item.getState();
+			}
 		});
 	};
 }
