@@ -133,6 +133,7 @@ document.getElementById("new").onchange = function(e) {
 //			"submitter-repo": "",
 			"submission-software": "TodoDAV",
 			"submission-time": (new Date).toISOString(), // TODO: Strip timezone.
+			"title": content,
 			"type": TYPE, // HACK
 		};
 		repo.submitMeta(uri, meta, {}, function(err, metainfo) {
