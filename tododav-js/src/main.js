@@ -34,6 +34,11 @@ function Item(parentURI, content) {
 	item.internal = {};
 	item.element = clone("item", item.internal);
 	item.internal.content.appendChild(document.createTextNode(item.content));
+	item.internal.checkbox.onclick = function() {
+		item.setState(this.checked, function(err) {
+			console.log(err);
+		});
+	};
 }
 Item.prototype.format = function() {
 	var item = this;
