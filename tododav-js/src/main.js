@@ -114,6 +114,30 @@ Item.parse = function(str) {
 };
 
 
+document.getElementById("new").onchange = function(e) {
+	var input = this;
+	var content = input.value.trim();
+	input.value = "";
+	if(!content.length) return;
+	var item = new Item(null, content);
+	var uri = item.getURI();
+	var buf = new Buffer(item.format(), "utf8");
+	repo.submitFile(buf, TYPE, { uri: uri }, function(err, fileinfo) {
+		if(err) throw err;
+		var meta = {
+//			"submitter-name": "",
+//			"submitter-repo": "",
+			"submission-software": "TodoDAV",
+			"submission-time": (new Date).toISOString(), // TODO: Strip timezone.
+			"type": TYPE, // HACK
+		};
+		repo.submitMeta(uri, meta, {}, function(err, metainfo) {
+			if(err) throw err;
+		});
+	});
+};
+
+
 // TODO: We need to be careful about race conditions when first loading.
 // 1. Start watching for meta-files
 // 2. Record all meta-files seen
@@ -125,8 +149,9 @@ updates.on("data", function(obj) {
 	console.log("updated", obj);
 });
 
-// TODO: Query by file type for our todo item files?
-var stream = repo.createQueryStream("", { count: 10, wait: false, dir: "z" })
+// TODO: This query is a hack.
+// We should also allow custom queries?
+var stream = repo.createQueryStream("type='"+TYPE+"'", { count: 2, wait: false, dir: "z" })
 stream.on("data", function(URI) {
 	stream.pause();
 
