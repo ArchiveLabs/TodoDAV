@@ -19,7 +19,7 @@ $(BUILD_DIR)/%.css: $(SRC_DIR)/%.css
 	@- mkdir -p $(dir $@)
 	cp $< $@
 
-$(BUILD_DIR)/index.js: $(SRC_DIR)/main.js
+$(BUILD_DIR)/index.js: $(SRC_DIR)/main.js $(SRC_DIR)/sln-client.js
 	@- mkdir -p $(dir $@)
 	browserify $< -o $@
 
