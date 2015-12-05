@@ -151,7 +151,7 @@ updates.on("data", function(obj) {
 
 // TODO: This query is a hack.
 // We should also allow custom queries?
-var stream = repo.createQueryStream("type='"+TYPE+"'", { count: 2, wait: false, dir: "z" })
+var stream = repo.createQueryStream("type='"+TYPE+"'", { count: 10, wait: false, dir: "z" })
 stream.on("data", function(URI) {
 	stream.pause();
 
