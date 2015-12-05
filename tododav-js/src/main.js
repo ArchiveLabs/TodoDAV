@@ -195,7 +195,7 @@ updates.on("end", function() {
 
 // TODO: This query is a hack.
 // We should also allow custom queries?
-var stream = repo.createQueryStream("type='"+TYPE+"'", { count: 10, wait: false, dir: "z" })
+var stream = repo.createQueryStream("type='"+TYPE+"'", { count: 50, wait: false, dir: "z" })
 stream.on("data", function(URI) {
 
 	if(!latestFile) latestFile = URI;
@@ -205,6 +205,7 @@ stream.on("data", function(URI) {
 
 	Item.load(URI, function(err, item) {
 		if(err) {
+			main.removeChild(tmp);
 			console.log(err);
 			stream.resume();
 			return;
@@ -225,6 +226,7 @@ stream.on("end", function() {
 
 		Item.load(URI, function(err, item) {
 			if(err) {
+				main.removeChild(tmp);
 				console.log(err);
 				stream.resume();
 				return;
