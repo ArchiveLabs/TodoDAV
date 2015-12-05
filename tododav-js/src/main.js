@@ -1,6 +1,8 @@
 // Copyright 2015 ArchiveLabs, et al.
 // MIT Licensed?
 
+var crypto = require("crypto");
+
 var sln = require("./sln-client");
 
 var TYPE = "text/vnd.tododav.item; charset=utf-8";
@@ -36,7 +38,14 @@ function Item(parentURI, content) {
 Item.prototype.format = function() {
 	var item = this;
 	return (item.parentURI||"")+"\r\n\r\n"+item.content;
-}
+};
+Item.prototype.getURI = function() {
+	var item = this;
+	var sha256 = crypto.createHash("sha256");
+	sha256.write(item.format(), "utf8");
+	sha256.end();
+	return "hash://sha256/"+sha256.read();
+};
 Item.byURI = {};
 Item.load = function(URI, cb) {
 	var item = this;
@@ -48,12 +57,12 @@ Item.load = function(URI, cb) {
 		Item.byURI[URI] = item;
 		return cb(null, item);
 	});
-}
+};
 Item.parse = function(str) {
 	var x = /^(hash:\/\/[\w\d.-]+\/[\w\d.%_-]+)?(?:\r\n|\r|\n)(?:\r\n|\r|\n)(.*)$/.exec(str);
 	if(!x) return null;
 	return new Item(x[1] || null, x[2]);
-}
+};
 
 
 
