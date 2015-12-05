@@ -95,6 +95,14 @@ Item.prototype.setState = function(completed, cb) {
 		});
 	});
 };
+Item.prototype.update = function(cb) {
+	var item = this;
+	item.getState(function(err, flag) {
+		if(err) return cb(err);
+		item.internal.checkbox.checked = flag;
+		return cb(null);
+	});
+};
 Item.byURI = {};
 Item.load = function(URI, cb) {
 	var item = this;
@@ -104,9 +112,8 @@ Item.load = function(URI, cb) {
 		var item = Item.parse(info.data);
 		if(!item) return cb(new Error("parse error"), null);
 		Item.byURI[URI] = item;
-		item.getState(function(err, flag) {
+		item.update(function(err) {
 			if(err) return cb(err, null);
-			item.internal.checkbox.checked = flag;
 			return cb(null, item);
 		});
 	});
@@ -142,6 +149,9 @@ document.getElementById("new").onchange = function(e) {
 	});
 };
 
+var main = document.getElementById("main");
+var latestMeta = null;
+var latestFile = null;
 
 // TODO: We need to be careful about race conditions when first loading.
 // 1. Start watching for meta-files
@@ -149,20 +159,19 @@ document.getElementById("new").onchange = function(e) {
 // 3. Load latest files
 // 4. Apply (possibly redundant) meta-file updates
 // Also the case of reconnection requires us to be similarly careful.
-var updates = repo.createMetafilesStream({ count: 1, start: "", wait: true, dir: "a" });
-updates.on("data", function(obj) {
-	console.log("updated", obj);
+var updates = repo.createMetafilesStream({ count: 1, start: "", wait: false, dir: "z" });
+updates.on("data", function(info) {
+	latestMeta = info.uri;
 });
+updates.on("end", function() {
 
-var main = document.getElementById("main");
-var latest = null;
 
 // TODO: This query is a hack.
 // We should also allow custom queries?
 var stream = repo.createQueryStream("type='"+TYPE+"'", { count: 10, wait: false, dir: "z" })
 stream.on("data", function(URI) {
 
-	if(!latest) latest = URI;
+	if(!latestFile) latestFile = URI;
 
 	var tmp = clone("loading", null);
 	main.appendChild(tmp);
@@ -179,10 +188,10 @@ stream.on("data", function(URI) {
 });
 stream.on("end", function() {
 
-	stream = repo.createQueryStream("type='"+TYPE+"'", { start: latest, wait: true });
+	stream = repo.createQueryStream("type='"+TYPE+"'", { start: latestFile, wait: true });
 	stream.on("data", function(URI) {
 
-		latest = URI;
+		latestFile = URI;
 
 		var tmp = clone("loading", null);
 		main.insertBefore(tmp, main.childNodes[0]);
@@ -200,6 +209,16 @@ stream.on("end", function() {
 	});
 
 
+	var updates = repo.createMetafilesStream({ start: latestMeta, wait: true });
+	updates.on("data", function(info) {
+		var item = Item.byURI[info.target];
+		if(item) item.update(function(){});
+		latestMeta = info.uri;
+	});
+
+
 });
 
+
+});
 
