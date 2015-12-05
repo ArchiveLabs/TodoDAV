@@ -3,6 +3,8 @@
 
 var sln = require("./sln-client");
 
+var TYPE = "text/vnd.tododav.item; charset=utf-8";
+
 var repo = sln.createRepo("/", null);
 
 function formatItem(parentURI, content) {
@@ -24,6 +26,7 @@ stream.on("data", function(URI) {
 
 	repo.getFile(URI, { encoding: "utf8" }, function(err, info) {
 		if(err) throw err;
+		// TODO: Check TYPE === info.type
 		var item = parseItem(info.data);
 		console.log(item);
 
