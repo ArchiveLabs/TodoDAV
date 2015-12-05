@@ -9,6 +9,10 @@ var TYPE = "text/vnd.tododav.item; charset=utf-8";
 
 var repo = sln.createRepo("/", null);
 
+function has(obj, prop) {
+	return Object.prototype.hasOwnProperty.call(obj, prop);
+}
+
 // TODO: Use a real... JavaScript framework?
 function clone(id, childByID) {
 	var element = document.getElementById(id).cloneNode(true);
@@ -31,12 +35,14 @@ function Item(parentURI, content) {
 	var item = this;
 	item.parentURI = parentURI;
 	item.content = content;
+	item.meta = {};
+	item.metafiles = {};
 	item.internal = {};
 	item.element = clone("item", item.internal);
 	item.internal.content.appendChild(document.createTextNode(item.content));
 	item.internal.checkbox.onclick = function() {
 		item.setState(this.checked, function(err) {
-			console.log(err);
+			if(err) throw err;
 		});
 	};
 }
@@ -71,35 +77,52 @@ function flaginc(flag) {
 	}
 	return flag; // Overflow.
 }
-Item.prototype.getState = function(cb) {
+function merge(src, dst) { // TODO: sln.mergeMeta ?
+	for(var x in src) if(has(src, x)) {
+		if(!has(dst, x)) dst[x] = {};
+		if("string" === typeof src[x]) {
+			dst[x][src[x]] = {};
+		} else {
+			merge(src[x], dst[x]);
+		}
+	}
+}
+Item.prototype.getState = function() {
 	var item = this;
-	var URI = item.getURI();
-	repo.getMeta(URI, {}, function(err, meta) {
-		if(err) return cb(err, null);
-		var state = flagstate(meta["completed"]);
-		var flag = (1 === parseInt(state[state.length-1], 10) % 2);
-		return cb(null, flag);
-	});
+	var state = flagstate(item.meta["completed"]);
+	return 1 === parseInt(state[state.length-1], 10) % 2;
 };
 Item.prototype.setState = function(completed, cb) {
 	var item = this;
 	var URI = item.getURI();
-	repo.getMeta(URI, {}, function(err, meta) {
-		if(err) return cb(err, null);
-		var state = flagstate(meta["completed"]);
-		var crdt = {"completed": {}};
-		crdt["completed"][flaginc(state)] = {};
-		repo.submitMeta(URI, crdt, {}, function(err, info) {
-			if(err) return cb(err, null);
-			return cb(null, null);
-		});
+	var state = flagstate(item.meta["completed"]);
+	var crdt = {"completed": {}};
+	crdt["completed"][flaginc(state)] = {};
+	repo.submitMeta(URI, crdt, {}, function(err, info) {
+		if(err) return cb(err);
+		merge(crdt, item.meta);
+		item.metafiles[info.uri] = 1;
+		// TODO: If we knew this hash earlier, we could ensure we
+		// didn't load the meta-file we just submitted...
+
+		return cb(null);
 	});
 };
-Item.prototype.update = function(cb) {
+Item.prototype.update = function(metaURI, cb) {
 	var item = this;
-	item.getState(function(err, flag) {
+	if(has(item.metafiles, metaURI)) return cb(null);
+	var opts = {
+		"accept": sln.metatype,
+		"encoding": "utf8"
+	};
+	repo.getFile(metaURI, opts, function(err, info) {
 		if(err) return cb(err);
-		item.internal.checkbox.checked = flag;
+		// TODO: sln.parseMetaFile ?
+		var json = /[\r\n][^]*$/.exec(info.data)[0]; // TODO?
+		var src = JSON.parse(json);
+		merge(src, item.meta);
+		item.metafiles[metaURI] = 1;
+		item.internal.checkbox.checked = item.getState();
 		return cb(null);
 	});
 };
@@ -108,12 +131,16 @@ Item.load = function(URI, cb) {
 	var item = this;
 	repo.getFile(URI, { encoding: "utf8" }, function(err, info) {
 		if(err) return cb(err, null);
-		// TODO: Check TYPE === info.type
+		if(TYPE !== info.type) return cb(new Error("mime error"), null);
 		var item = Item.parse(info.data);
 		if(!item) return cb(new Error("parse error"), null);
 		Item.byURI[URI] = item;
-		item.update(function(err) {
+		repo.getMeta(URI, {}, function(err, info) {
 			if(err) return cb(err, null);
+			merge(info, item.meta);
+			// TODO: We should record the meta-files here, but the
+			// API doesn't give them. Doesn't matter much though.
+			item.internal.checkbox.checked = item.getState();
 			return cb(null, item);
 		});
 	});
@@ -212,7 +239,7 @@ stream.on("end", function() {
 	var updates = repo.createMetafilesStream({ start: latestMeta, wait: true });
 	updates.on("data", function(info) {
 		var item = Item.byURI[info.target];
-		if(item) item.update(function(){});
+		if(item) item.update(info.uri, function(){});
 		latestMeta = info.uri;
 	});
 

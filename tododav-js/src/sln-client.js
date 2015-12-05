@@ -298,7 +298,7 @@ Repo.prototype.submitFile = function(buf, type, opts, cb) {
 	req.on("response", function(res) {
 		if(201 == res.statusCode) {
 			cb(null, {
-				location: res.headers["x-location"],
+				uri: res.headers["x-location"],
 			});
 		} else {
 			var err = new Error("Status code "+res.statusCode);
