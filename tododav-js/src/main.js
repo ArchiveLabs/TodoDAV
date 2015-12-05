@@ -104,7 +104,11 @@ Item.load = function(URI, cb) {
 		var item = Item.parse(info.data);
 		if(!item) return cb(new Error("parse error"), null);
 		Item.byURI[URI] = item;
-		return cb(null, item);
+		item.getState(function(err, flag) {
+			if(err) return cb(err, null);
+			item.internal.checkbox.checked = flag;
+			return cb(null, item);
+		});
 	});
 };
 Item.parse = function(str) {
@@ -150,11 +154,14 @@ updates.on("data", function(obj) {
 });
 
 var main = document.getElementById("main");
+var latest = null;
 
 // TODO: This query is a hack.
 // We should also allow custom queries?
 var stream = repo.createQueryStream("type='"+TYPE+"'", { count: 10, wait: false, dir: "z" })
 stream.on("data", function(URI) {
+
+	if(!latest) latest = URI;
 
 	var tmp = clone("loading", null);
 	main.appendChild(tmp);
@@ -165,16 +172,32 @@ stream.on("data", function(URI) {
 			stream.resume();
 			return;
 		}
-		item.getState(function(err, flag) {
+		main.replaceChild(item.element, tmp);
+	});
+
+});
+stream.on("end", function() {
+
+	stream = repo.createQueryStream("type='"+TYPE+"'", { start: latest, wait: true });
+	stream.on("data", function(URI) {
+
+		latest = URI;
+
+		var tmp = clone("loading", null);
+		main.insertBefore(tmp, main.childNodes[0]);
+
+		Item.load(URI, function(err, item) {
 			if(err) {
 				console.log(err);
 				stream.resume();
 				return;
 			}
-			item.internal.checkbox.checked = flag;
 			main.replaceChild(item.element, tmp);
 		});
+
+
 	});
+
 
 });
 
