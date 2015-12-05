@@ -44,7 +44,7 @@ Item.prototype.getURI = function() {
 	var sha256 = crypto.createHash("sha256");
 	sha256.write(item.format(), "utf8");
 	sha256.end();
-	return "hash://sha256/"+sha256.read();
+	return "hash://sha256/"+sha256.read().toString("hex");
 };
 function flagstate(crdt) {
 	var updates = crdt ? Object.keys(crdt) : [];
@@ -126,13 +126,21 @@ stream.on("data", function(URI) {
 	stream.pause();
 
 	Item.load(URI, function(err, item) {
-		console.log(err, item);
 		if(err) {
+			console.log(err);
 			stream.resume();
 			return;
 		}
-		document.getElementById("main").appendChild(item.element);
-		stream.resume();
+		item.getState(function(err, flag) {
+			if(err) {
+				console.log(err);
+				stream.resume();
+				return;
+			}
+			item.internal.checkbox.checked = flag;
+			document.getElementById("main").appendChild(item.element);
+			stream.resume();
+		});
 	});
 
 });
