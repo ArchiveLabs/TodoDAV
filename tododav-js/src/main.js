@@ -149,11 +149,15 @@ updates.on("data", function(obj) {
 	console.log("updated", obj);
 });
 
+var main = document.getElementById("main");
+
 // TODO: This query is a hack.
 // We should also allow custom queries?
 var stream = repo.createQueryStream("type='"+TYPE+"'", { count: 10, wait: false, dir: "z" })
 stream.on("data", function(URI) {
-	stream.pause();
+
+	var tmp = clone("loading", null);
+	main.appendChild(tmp);
 
 	Item.load(URI, function(err, item) {
 		if(err) {
@@ -168,8 +172,7 @@ stream.on("data", function(URI) {
 				return;
 			}
 			item.internal.checkbox.checked = flag;
-			document.getElementById("main").appendChild(item.element);
-			stream.resume();
+			main.replaceChild(item.element, tmp);
 		});
 	});
 
