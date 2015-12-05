@@ -66,6 +66,16 @@ function flaginc(flag) {
 	}
 	return flag; // Overflow.
 }
+Item.prototype.getState = function(cb) {
+	var item = this;
+	var URI = item.getURI();
+	repo.getMeta(URI, {}, function(err, meta) {
+		if(err) return cb(err, null);
+		var state = flagstate(meta["completed"]);
+		var flag = (1 === parseInt(state[state.length-1], 10) % 2);
+		return cb(null, flag);
+	});
+};
 Item.prototype.setState = function(completed, cb) {
 	var item = this;
 	var URI = item.getURI();
