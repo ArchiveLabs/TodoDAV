@@ -46,6 +46,40 @@ Item.prototype.getURI = function() {
 	sha256.end();
 	return "hash://sha256/"+sha256.read();
 };
+function flagstate(crdt) {
+	var updates = crdt ? Object.keys(crdt) : [];
+	updates.sort(); // Lexicographic sort.
+	for(var i = updates.length; i-- > 0;) {
+		if(/\d{20}/.test(updates[i])) return updates[i];
+	}
+	return new Array(20+1).join("0");
+}
+function flaginc(flag) {
+	var digits = flag.split("").map(function(x) { return parseInt(x, 10); });
+	for(var i = digits.length; i-- > 0;) {
+		if(digits[i] < 9) {
+			digits[i]++;
+			return digits.map(function(x) { return x.toString(10); }).join("");
+		} else {
+			digits[i] = 0;
+		}
+	}
+	return flag; // Overflow.
+}
+Item.prototype.setState = function(completed, cb) {
+	var item = this;
+	var URI = item.getURI();
+	repo.getMeta(URI, {}, function(err, meta) {
+		if(err) return cb(err, null);
+		var state = flagstate(meta["completed"]);
+		var crdt = {"completed": {}};
+		crdt["completed"][flaginc(state)] = {};
+		repo.submitMeta(URI, crdt, {}, function(err, info) {
+			if(err) return cb(err, null);
+			return cb(null, null);
+		});
+	});
+};
 Item.byURI = {};
 Item.load = function(URI, cb) {
 	var item = this;
@@ -65,6 +99,16 @@ Item.parse = function(str) {
 };
 
 
+// TODO: We need to be careful about race conditions when first loading.
+// 1. Start watching for meta-files
+// 2. Record all meta-files seen
+// 3. Load latest files
+// 4. Apply (possibly redundant) meta-file updates
+// Also the case of reconnection requires us to be similarly careful.
+var updates = repo.createMetafilesStream({ count: 1, start: "", wait: true, dir: "a" });
+updates.on("data", function(obj) {
+	console.log("updated", obj);
+});
 
 // TODO: Query by file type for our todo item files?
 var stream = repo.createQueryStream("", { count: 10, wait: false, dir: "z" })
@@ -82,4 +126,5 @@ stream.on("data", function(URI) {
 	});
 
 });
+
 
