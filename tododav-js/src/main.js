@@ -140,7 +140,7 @@ Item.load = function(URI, cb) {
 	});
 };
 Item.parse = function(str) {
-	var x = /^(hash:\/\/[\w\d.-]+\/[\w\d.%_-]+)?(?:\r\n|\r|\n)(?:\r\n|\r|\n)(.*)$/.exec(str);
+	var x = /^(hash:\/\/[\w\d.-]+\/[\w\d.%_-]+)?(?:\r\n|\r|\n){2}(.*)$/.exec(str);
 	if(!x) return null;
 	return new Item(x[1] || null, x[2]);
 };
