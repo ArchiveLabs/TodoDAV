@@ -53,16 +53,6 @@ function flaginc(flag) {
 	}
 	return flag; // Overflow.
 }
-function merge(src, dst) { // TODO: sln.mergeMeta ?
-	for(var x in src) if(has(src, x)) {
-		if(!has(dst, x)) dst[x] = {};
-		if("string" === typeof src[x]) {
-			dst[x][src[x]] = {};
-		} else {
-			merge(src[x], dst[x]);
-		}
-	}
-}
 
 function Item(parentURI, content) {
 	var item = this;
@@ -106,7 +96,7 @@ Item.prototype.setState = function(completed, cb) {
 	crdt["completed"][flaginc(state)] = {};
 	repo.submitMeta(URI, crdt, {}, function(err, info) {
 		if(err) return cb(err);
-		merge(crdt, item.meta);
+		sln.mergeMeta(item.meta, crdt);
 		item.metafiles[info.uri] = 1;
 		// TODO: If we knew this hash earlier, we could ensure we
 		// didn't load the meta-file we just submitted...
@@ -123,10 +113,8 @@ Item.prototype.update = function(metaURI, cb) {
 	};
 	repo.getFile(metaURI, opts, function(err, info) {
 		if(err) return cb(err);
-		// TODO: sln.parseMetaFile ?
-		var json = /[\r\n][^]*$/.exec(info.data)[0]; // TODO?
-		var src = JSON.parse(json);
-		merge(src, item.meta);
+		var metafile = sln.parseMetafile(info.data);
+		sln.mergeMeta(item.meta, metafile.data);
 		item.metafiles[metaURI] = 1;
 		item.internal.checkbox.checked = item.getState();
 		return cb(null);
@@ -143,7 +131,7 @@ Item.load = function(URI, cb) {
 		Item.byURI[URI] = item;
 		repo.getMeta(URI, {}, function(err, info) {
 			if(err) return cb(err, null);
-			merge(info, item.meta);
+			sln.mergeMeta(item.meta, info);
 			// TODO: We should record the meta-files here, but the
 			// API doesn't give them. Minor performance hit.
 			item.internal.checkbox.checked = item.getState();
